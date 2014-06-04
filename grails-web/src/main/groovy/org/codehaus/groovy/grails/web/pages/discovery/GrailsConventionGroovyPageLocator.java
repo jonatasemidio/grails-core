@@ -105,7 +105,7 @@ public class GrailsConventionGroovyPageLocator extends DefaultGroovyPageLocator 
     }
 
     private String getViewNameWithFormat(String viewName, String format) {
-        if (format == null || format == 'all') {
+        if (format == null || format.equals("all")) {
             return viewName;
         }
         return viewName + DOT + format;
