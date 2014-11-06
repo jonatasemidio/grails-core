@@ -15,8 +15,9 @@
  */
 package org.codehaus.groovy.grails.plugins.codecs;
 
+import grails.util.Holders;
+
 import org.codehaus.groovy.grails.commons.GrailsApplication;
-import org.codehaus.groovy.grails.plugins.support.aware.GrailsApplicationAware;
 import org.codehaus.groovy.grails.support.encoding.CodecFactory;
 import org.codehaus.groovy.grails.support.encoding.CodecIdentifier;
 import org.codehaus.groovy.grails.support.encoding.Decoder;
@@ -29,10 +30,10 @@ import org.codehaus.groovy.grails.support.encoding.Encoder;
  * @author Lari Hotari
  * @since 1.1
  */
-public final class HTMLCodec implements CodecFactory, GrailsApplicationAware {
+public final class HTMLCodec implements CodecFactory {
     public static final String CONFIG_PROPERTY_GSP_HTMLCODEC = "grails.views.gsp.htmlcodec";
     static final String CODEC_NAME = "HTML";
-    private Encoder encoder;
+    private Encoder encoder = null;
     static final Encoder xml_encoder = new HTMLEncoder();
     static final Encoder html4_encoder = new HTML4Encoder() {
         @Override
@@ -47,32 +48,27 @@ public final class HTMLCodec implements CodecFactory, GrailsApplicationAware {
         }
     };
 
-    public HTMLCodec() {
-        setUseLegacyEncoder(true);
-    }
-
     public Encoder getEncoder() {
+        if(encoder == null){
+            GrailsApplication grailsApplication = grails.util.Holders.getGrailsApplication();
+
+            boolean useLegacyEncoder = true;
+            if (grailsApplication != null && grailsApplication.getFlatConfig() != null) {
+                Object htmlCodecSetting = grailsApplication.getFlatConfig().get(CONFIG_PROPERTY_GSP_HTMLCODEC);
+                if (htmlCodecSetting != null) {
+                    String htmlCodecSettingStr = htmlCodecSetting.toString().toLowerCase();
+                    if (htmlCodecSettingStr.startsWith("xml") || "xhtml".equalsIgnoreCase(htmlCodecSettingStr)) {
+                        useLegacyEncoder = false;
+                    }
+                }
+            }
+            setUseLegacyEncoder(useLegacyEncoder);
+        }
         return encoder;
     }
 
     public Decoder getDecoder() {
         return decoder;
-    }
-
-    public void setGrailsApplication(GrailsApplication grailsApplication) {
-        if (grailsApplication == null || grailsApplication.getFlatConfig() == null) {
-            return;
-        }
-
-        Object htmlCodecSetting = grailsApplication.getFlatConfig().get(CONFIG_PROPERTY_GSP_HTMLCODEC);
-        if (htmlCodecSetting == null) {
-            return;
-        }
-
-        String htmlCodecSettingStr = htmlCodecSetting.toString().toLowerCase();
-        if (htmlCodecSettingStr.startsWith("xml") || "xhtml".equalsIgnoreCase(htmlCodecSettingStr)) {
-            setUseLegacyEncoder(false);
-        }
     }
 
     public void setUseLegacyEncoder(boolean useLegacyEncoder) {
